@@ -6,9 +6,8 @@
 <title>ProShop | Checkout</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
 <script src="https://js.paystack.co/v1/inline.js"></script>
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
 :root{
@@ -139,12 +138,141 @@ form input, form textarea{
 
   <form id="checkoutForm">
     <input type="text" name="name" placeholder="Full Name" required>
-    <textarea name="address" placeholder="Delivery Address" rows="3" required></textarea>
+    <input type="email" name="email" placeholder="Email Address" required>
     <input type="tel" name="phone" placeholder="Phone Number" required>
+    <textarea name="address" placeholder="Delivery Address" rows="3" required></textarea>
     <button type="submit" class="pay-btn">Generate Receipt</button>
   </form>
 </div>
 
+<!-- RECEIPT MODAL -->
+<div id="receiptModal">
+  <div id="receiptContent">
+    <h2>Receipt</h2>
+    <div id="receiptDetails"></div>
+
+    <button class="modal-btn" id="modalPayBtn">Pay</button>
+    <button class="modal-btn" id="downloadBtn">Download Receipt</button>
+  </div>
+</div>
+
+<script>
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function renderCheckout(){
+  const container = document.getElementById('checkoutItems');
+  container.innerHTML = '';
+  let total = 0;
+
+  if(cart.length === 0){
+    container.innerHTML = '<p style="text-align:center;color:#64748b">Your cart is empty!</p>';
+    document.getElementById('checkoutTotal').textContent = '0';
+    return;
+  }
+
+  cart.forEach(item=>{
+    let qty = item.qty || 1;
+    let price = Number(item.price) || 0;
+    total += price * qty;
+
+    const div = document.createElement('div');
+    div.className = 'checkout-item';
+    div.innerHTML = `
+      <img src="${item.img}">
+      <div class="checkout-item-details">
+        <h3>${item.name}</h3>
+        <p>Price: ₦${price}</p>
+        <p>Quantity: ${qty}</p>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  document.getElementById('checkoutTotal').textContent = total;
+}
+
+// Handle checkout form
+document.getElementById('checkoutForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  if(cart.length === 0) return alert("Cart is empty!");
+
+  const formData = new FormData(e.target);
+  const name = formData.get('name');
+  const email = formData.get('email');
+  const phone = formData.get('phone');
+  const address = formData.get('address');
+  const total = Number(document.getElementById('checkoutTotal').textContent);
+
+  let receiptHTML = `
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Email:</strong> ${email}</p>
+    <p><strong>Phone:</strong> ${phone}</p>
+    <p><strong>Address:</strong> ${address}</p>
+    <hr>
+    <h3>Items</h3>
+  `;
+
+  cart.forEach(item=>{
+    let qty = item.qty || 1;
+    let price = Number(item.price) || 0;
+    let subtotal = price * qty;
+    receiptHTML += `<div class="receipt-item"><span>${item.name} (x${qty})</span><span>₦${subtotal}</span></div>`;
+  });
+
+  receiptHTML += `<hr><p style="font-weight:700;font-size:18px">Total: ₦${total}</p>`;
+
+  document.getElementById('receiptDetails').innerHTML = receiptHTML;
+  document.getElementById('receiptModal').style.display = 'flex';
+});
+
+// Download receipt as image
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  html2canvas(document.getElementById('receiptContent')).then(canvas=>{
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'receipt.png';
+    link.click();
+  });
+});
+
+// Paystack Payment
+document.getElementById('modalPayBtn').addEventListener('click', ()=>{
+  const total = Number(document.getElementById('checkoutTotal').textContent) * 100; // in kobo
+  const email = document.querySelector('input[name="email"]').value; // user email
+  const phone = document.querySelector('input[name="phone"]').value;
+
+  let handler = PaystackPop.setup({
+      key: 'pk_live_f1747ed1c2bff6934936083b0ce7d18006f81b52',
+      email: email,
+      amount: total,
+      currency: 'NGN',
+      ref: '' + Math.floor(Math.random() * 1000000000 + 1),
+      metadata: {
+        custom_fields: [
+          {display_name: "Phone Number", variable_name: "phone", value: phone}
+        ]
+      },
+      onClose: function(){ alert('Payment window closed'); },
+      callback: function(response){
+          alert('Payment successful! Transaction ref: ' + response.reference);
+
+          // Clear cart
+          localStorage.removeItem('cart');
+          cart = [];
+          renderCheckout();
+          document.getElementById('receiptModal').style.display = 'none';
+      }
+  });
+
+  handler.openIframe();
+});
+
+// Load cart
+renderCheckout();
+</script>
+
+</body>
+</html>
 <!-- RECEIPT MODAL -->
 <div id="receiptModal">
   <div id="receiptContent">
