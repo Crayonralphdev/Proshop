@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProShop | Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --primary: #1f6fae;
+  --accent: #f97316;
+  --light: #f4f8ff;
+  --dark: #0f172a;
+  --card: #ffffff;
+  --gray: #64748b;
+}
+* { box-sizing: border-box; margin:0; padding:0; font-family:'Poppins',sans-serif; }
+body { background: var(--light); color: var(--dark); overflow-x: hidden; }
+
+/* NAVBAR */
+.navbar {
+  position: fixed; top:0; left:0; width:100%;
+  background: #fff; display:flex; justify-content:space-between; align-items:center;
+  padding:15px 20px; box-shadow:0 2px 10px rgba(0,0,0,0.1); z-index:1000;
+}
+.navbar .logo { font-weight:700; font-size:22px; color:var(--primary); }
+.navbar .cart-btn { position:relative; font-size:22px; color:var(--primary); cursor:pointer; }
+.cart-count {
+  position:absolute; top:-5px; right:-5px; background:var(--accent); color:#fff; font-size:12px; width:20px; height:20px;
+  border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:700;
+}
+
+/* SEARCH BAR */
+.search-bar {
+  margin-top:70px; padding:10px 20px; background:#fff; display:flex; justify-content:center;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1); position:sticky; top:60px; z-index:900;
+}
+.search-bar input { width:100%; max-width:600px; padding:10px 14px; border-radius:20px; border:1px solid var(--gray); font-size:14px; }
+
+/* HERO CAROUSEL */
+.hero-carousel { width:100%; overflow:hidden; position:relative; height:200px; margin-top:50px; }
+.carousel-track { display:flex; transition: transform 1s ease-in-out; }
+.carousel-slide { min-width:100%; flex-shrink:0; }
+.carousel-slide img { width:100%; height:100%; object-fit:cover; border-radius:5px; }
+
+/* SCROLLING MARQUEE */
+.marquee-container { width:100%; overflow:hidden; background:var(--primary); padding:10px 20px; margin-top:10px; box-sizing:border-box; }
+.marquee-text { display:inline-block; white-space:nowrap; font-weight:700; color:#fff; font-size:16px; animation: marquee 15s linear infinite; }
+@keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+/* HEADINGS */
+.section-title { font-weight:600; font-size:22px; color:var(--primary); margin:20px 0 10px 20px; }
+
+/* CATEGORY CAROUSELS */
+.product-carousel { margin-bottom:30px; }
+.carousel-track-products { display:flex; overflow-x:auto; gap:15px; padding:0 20px; scroll-behavior:smooth; }
+.product-card {
+  flex:0 0 auto; width:160px; background:var(--card); border-radius:15px; padding:10px; text-align:center; transition:transform 0.3s, box-shadow 0.3s; cursor:pointer;
+}
+.product-card:hover { transform:translateY(-5px); box-shadow:0 5px 15px rgba(0,0,0,0.2); }
+.product-card img { width:100%; height:120px; object-fit:cover; border-radius:10px; }
+.product-card p { font-weight:500; margin-top:6px; color:var(--dark); }
+.product-card button { margin-top:6px; padding:6px 10px; border:none; border-radius:12px; background:var(--accent); color:#fff; cursor:pointer; font-size:12px; }
+
+/* MODAL */
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:2000; }
+.modal-content { background:#fff; padding:20px; border-radius:15px; width:90%; max-width:400px; text-align:center; }
+.modal-content img { width:100%; height:200px; object-fit:cover; border-radius:12px; margin-bottom:10px; }
+.modal-content h3 { margin-bottom:6px; }
+.modal-content p { font-size:14px; color:var(--gray); margin-bottom:12px; }
+.modal-content button { padding:8px 14px; background:var(--primary); color:#fff; border:none; border-radius:12px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="logo">ProShop</div>
+  <div class="cart-btn" onclick="goToCart()">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <div class="cart-count" id="cartCount">0</div>
+  </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search products...">
+</div>
+
+<!-- HERO CAROUSEL -->
+<section class="hero-carousel">
+  <div class="carousel-track">
+    <div class="carousel-slide"><img src="https://picsum.photos/id/1015/1200/500" alt="Slide 1"></div>
+    <div class="carousel-slide"><img src="https://picsum.photos/id/1016/1200/500" alt="Slide 2"></div>
+    <div class="carousel-slide"><img src="https://picsum.photos/id/1018/1200/500" alt="Slide 3"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-container">
+  <div class="marquee-text">
+    🔥 Huge Sale Today! Electronics, Fashion, Home, Toys & More! Free delivery on orders above ₦50,000! Don’t miss out on our amazing deals! 🔥
+  </div>
+</div>
+
+<!-- SEARCH RESULTS -->
+<div id="searchResults" style="display:none; margin:20px;">
+  <p class="section-title">Search Results</p>
+  <div class="carousel-track-products" id="searchResultsContainer"></div>
+</div>
+
+<div class="container">
+  <!-- CATEGORY: Electronics -->
+  <div class="category">
+    <p class="section-title">Electronics</p>
+    <div class="product-carousel">
+      <div class="carousel-track-products" id="electronics"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY: Fashion -->
+  <div class="category">
+    <p class="section-title">Fashion</p>
+    <div class="product-carousel">
+      <div class="carousel-track-products" id="fashion"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY: Home -->
+  <div class="category">
+    <p class="section-title">Home & Kitchen</p>
+    <div class="product-carousel">
+      <div class="carousel-track-products" id="home"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY: Toys -->
+  <div class="category">
+    <p class="section-title">Toys & Sports</p>
+    <div class="product-carousel">
+      <div class="carousel-track-products" id="toys"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal" id="productModal">
+  <div class="modal-content">
+    <img id="modalImg" src="">
+    <h3 id="modalTitle"></h3>
+    <p id="modalDesc"></p>
+    <button onclick="addToCartModal()">Add to Cart</button>
+  </div>
+</div>
+
+<script>
+// ===== HERO CAROUSEL =====
+let track = document.querySelector('.carousel-track');
+let slides = document.querySelectorAll('.carousel-slide');
+let index = 0;
+function nextSlide() {
+  index = (index + 1) % slides.length;
+  track.style.transform = `translateX(-${index * 100}%)`;
+}
+setInterval(nextSlide, 4000);
+
+// ===== PRODUCTS DATA =====
+const productsData = {
+  electronics: [...Array(10)].map((_,i)=>({name:`Electronics ${i+1}`, img:`https://picsum.photos/seed/e${i}/150/120`, desc:"High-quality electronic product", price:20000+i*1000})),
+  fashion: [...Array(10)].map((_,i)=>({name:`Fashion ${i+1}`, img:`https://picsum.photos/seed/f${i}/150/120`, desc:"Trendy fashion item", price:15000+i*500})),
+  home: [...Array(10)].map((_,i)=>({name:`Home ${i+1}`, img:`https://picsum.photos/seed/h${i}/150/120`, desc:"Useful home product", price:12000+i*700})),
+  toys: [...Array(10)].map((_,i)=>({name:`Toy ${i+1}`, img:`https://picsum.photos/seed/t${i}/150/120`, desc:"Fun toy product", price:8000+i*300}))
+};
+
+// ===== CART SYSTEM =====
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function renderCategory(categoryId,data){
+  const container=document.getElementById(categoryId);
+  container.innerHTML='';
+  data.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='product-card';
+    div.innerHTML=`
+      <img src="${p.img}" alt="${p.name}">
+      <p>${p.name}</p>
+      <p>₦${p.price}</p>
+      <button onclick="addToCart('${categoryId}',${i})">Add to Cart</button>
+    `;
+    div.querySelector('img').addEventListener('click',()=>openProductModal(p));
+    div.querySelector('p').addEventListener('click',()=>openProductModal(p));
+    container.appendChild(div);
+  });
+}
+
+function addToCart(categoryId,index){
+  const product = productsData[categoryId][index];
+  const cartIndex = cart.findIndex(item=>item.name === product.name);
+  if(cartIndex !== -1){
+    cart[cartIndex].qty++;
+  } else {
+    cart.push({...product, qty:1});
+  }
+  updateCartCount();
+  localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+function addToCartModal(){
+  if(window.modalProduct){
+    const product = window.modalProduct;
+    const cartIndex = cart.findIndex(item=>item.name === product.name);
+    if(cartIndex !== -1){ cart[cartIndex].qty++; } 
+    else { cart.push({...product, qty:1}); }
+    updateCartCount();
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }
+}
+
+function updateCartCount(){
+  const totalItems = cart.reduce((sum,item)=>sum+item.qty,0);
+  document.getElementById('cartCount').textContent = totalItems;
+}
+
+function openProductModal(p){
+  window.modalProduct = p;
+  document.getElementById('modalImg').src=p.img;
+  document.getElementById('modalTitle').textContent=p.name;
+  document.getElementById('modalDesc').textContent=`${p.desc} - Price: ₦${p.price}`;
+  document.getElementById('productModal').style.display='flex';
+}
+
+document.getElementById('productModal').addEventListener('click',e=>{
+  if(e.target.id==='productModal') e.target.style.display='none';
+});
+
+function goToCart(){ window.location.href='cart.html'; }
+
+// ===== SEARCH FUNCTIONALITY =====
+document.getElementById('searchInput').addEventListener('input', e=>{
+  const term = e.target.value.toLowerCase().trim();
+  const resultsContainer = document.getElementById('searchResultsContainer');
+  const searchSection = document.getElementById('searchResults');
+  if(term===''){ searchSection.style.display='none'; resultsContainer.innerHTML=''; document.querySelectorAll('.category').forEach(cat=>cat.style.display='block'); return; }
+  let matched=[];
+  for(const cat in productsData){
+    const matches=productsData[cat].filter(p=>p.name.toLowerCase().includes(term)||cat.toLowerCase().includes(term));
+    matched=matched.concat(matches);
+  }
+  resultsContainer.innerHTML='';
+  if(matched.length===0) resultsContainer.innerHTML='<p style="padding:10px;color:var(--gray)">No products found.</p>';
+  else matched.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='product-card';
+    div.innerHTML=`
+      <img src="${p.img}" alt="${p.name}">
+      <p>${p.name}</p>
+      <p>₦${p.price}</p>
+      <button onclick="addToCartModal()">Add to Cart</button>
+    `;
+    div.querySelector('img').addEventListener('click',()=>openProductModal(p));
+    div.querySelector('p').addEventListener('click',()=>openProductModal(p));
+    resultsContainer.appendChild(div);
+  });
+  searchSection.style.display='block';
+});
+
+// INITIAL RENDER
+for(const cat in productsData) renderCategory(cat,productsData[cat]);
+updateCartCount();
+</script>
+</body>
+</html>
