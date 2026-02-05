@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProShop | Checkout</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<style>
+:root{
+  --primary:#1f6fae;
+  --accent:#f97316;
+  --light:#f4f8ff;
+  --dark:#0f172a;
+  --card:#ffffff;
+  --gray:#64748b;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
+body{background:var(--light);color:var(--dark);}
+
+.container{max-width:800px;margin:80px auto;padding:20px;}
+h1{text-align:center;color:var(--primary);margin-bottom:20px;}
+
+.checkout-item{
+  display:flex;
+  align-items:center;
+  background:var(--card);
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  flex-wrap:wrap;
+}
+
+.checkout-item img{
+  width:80px;height:80px;object-fit:cover;border-radius:8px;
+}
+
+.checkout-item-details{flex:1;margin-left:15px;}
+.checkout-item-details h3{margin-bottom:5px;}
+.checkout-item-details p{margin-bottom:5px;color:var(--gray);}
+
+.total-section{
+  text-align:right;
+  margin-top:20px;
+  font-size:18px;
+  font-weight:600;
+}
+
+form{
+  margin-top:30px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+form input, form textarea{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid var(--gray);
+  font-size:14px;
+  width:100%;
+}
+
+.pay-btn{
+  padding:12px;
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+/* RECEIPT MODAL */
+#receiptModal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.5);
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+#receiptContent{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:520px;
+  max-height:90vh;
+  overflow:auto;
+}
+
+#receiptContent h2{color:var(--primary);margin-bottom:10px;}
+#receiptDetails p{margin:6px 0;}
+
+.receipt-item{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+}
+
+.modal-btn{
+  margin-top:15px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+#modalPayBtn{background:var(--primary);color:white;}
+#downloadBtn{background:var(--accent);color:white;}
+
+@media(max-width:500px){
+  .checkout-item{flex-direction:column;align-items:flex-start;}
+  .checkout-item img{margin-bottom:10px;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Checkout</h1>
+
+  <div id="checkoutItems"></div>
+
+  <div class="total-section">
+    Total: ₦<span id="checkoutTotal">0</span>
+  </div>
+
+  <form id="checkoutForm">
+    <input type="text" name="name" placeholder="Full Name" required>
+    <textarea name="address" placeholder="Delivery Address" rows="3" required></textarea>
+    <input type="tel" name="phone" placeholder="Phone Number" required>
+    <button type="submit" class="pay-btn">Generate Receipt</button>
+  </form>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div id="receiptModal">
+  <div id="receiptContent">
+    <h2>Receipt</h2>
+    <div id="receiptDetails"></div>
+
+    <button class="modal-btn" id="modalPayBtn">Pay</button>
+    <button class="modal-btn" id="downloadBtn">Download Receipt</button>
+  </div>
+</div>
+
+<script>
+emailjs.init("gzrm8ipGQ2x20jjVi"); // YOUR PUBLIC KEY
+
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function renderCheckout(){
+  const container = document.getElementById('checkoutItems');
+  container.innerHTML = '';
+  let total = 0;
+
+  if(cart.length === 0){
+    container.innerHTML = '<p style="text-align:center;color:#64748b">Your cart is empty!</p>';
+    document.getElementById('checkoutTotal').textContent = '0';
+    return;
+  }
+
+  cart.forEach(item=>{
+    let qty = item.qty || 1;
+    let price = Number(item.price) || 0;
+    total += price * qty;
+
+    const div = document.createElement('div');
+    div.className = 'checkout-item';
+    div.innerHTML = `
+      <img src="${item.img}">
+      <div class="checkout-item-details">
+        <h3>${item.name}</h3>
+        <p>Price: ₦${price}</p>
+        <p>Quantity: ${qty}</p>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  document.getElementById('checkoutTotal').textContent = total;
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  if(cart.length === 0) return alert("Cart is empty!");
+
+  const formData = new FormData(e.target);
+  const name = formData.get('name');
+  const address = formData.get('address');
+  const phone = formData.get('phone');
+  const total = document.getElementById('checkoutTotal').textContent;
+
+  let orderText = "";
+  let receiptHTML = `
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Phone:</strong> ${phone}</p>
+    <p><strong>Address:</strong> ${address}</p>
+    <hr>
+    <h3>Items</h3>
+  `;
+
+  cart.forEach(item=>{
+    let qty = item.qty || 1;
+    let price = Number(item.price) || 0;
+    let subtotal = price * qty;
+
+    orderText += `${item.name} x${qty} = ₦${subtotal}\n`;
+    receiptHTML += `<div class="receipt-item"><span>${item.name} (x${qty})</span><span>₦${subtotal}</span></div>`;
+  });
+
+  receiptHTML += `<hr><p style="font-weight:700;font-size:18px">Total: ₦${total}</p>`;
+
+  document.getElementById('receiptDetails').innerHTML = receiptHTML;
+  document.getElementById('receiptModal').style.display = 'flex';
+
+  // SEND EMAIL USING EMAILJS
+  emailjs.send("service_f36uxwd", "template_1nkc8ik", {
+    name: name,
+    phone: phone,
+    address: address,
+    message: orderText,
+    total: total,
+    time: new Date().toLocaleString()
+  }).then(
+    () => console.log("Order sent successfully"),
+    (err) => console.error("Email failed:", err)
+  );
+});
+
+// DOWNLOAD RECEIPT
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('receiptDetails').innerText;
+  const blob = new Blob([text], {type:'text/plain'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'receipt.txt';
+  link.click();
+});
+
+// PAY BUTTON (PLACEHOLDER)
+document.getElementById('modalPayBtn').addEventListener('click', ()=>{
+  alert("Payment system will be connected here.");
+});
+
+// LOAD CART
+renderCheckout();
+</script>
+
+</body>
+</html>
