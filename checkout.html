@@ -4,8 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ProShop | Checkout</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
 <style>
 :root{
   --primary:#1f6fae;
@@ -18,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
 body{background:var(--light);color:var(--dark);}
 
-.container{max-width:800px;margin:50px auto;padding:20px;}
+.container{max-width:800px;margin:80px auto;padding:20px;}
 h1{text-align:center;color:var(--primary);margin-bottom:20px;}
 
 .checkout-item{
@@ -90,18 +94,17 @@ form input, form textarea{
   width:90%;
   max-width:520px;
   max-height:90vh;
-  overflow-y:auto; /* scroll if content is too long */
-  box-shadow:0 5px 20px rgba(0,0,0,0.2);
+  overflow:auto;
 }
 
-#receiptContent h2{color:var(--primary);margin-bottom:10px;text-align:center;}
-#receiptDetails{font-size:14px;color:var(--dark);}
-.receipt-header{text-align:center;margin-bottom:20px;}
-.receipt-header img{max-width:100px;margin-bottom:10px;}
-.receipt-table{width:100%;border-collapse:collapse;margin-top:10px;}
-.receipt-table th, .receipt-table td{border:1px solid #ccc;padding:8px;text-align:left;}
-.receipt-table th{background:var(--primary);color:#fff;}
-.receipt-footer{margin-top:15px;font-weight:700;font-size:16px;text-align:right;}
+#receiptContent h2{color:var(--primary);margin-bottom:10px;}
+#receiptDetails p{margin:6px 0;}
+
+.receipt-item{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+}
 
 .modal-btn{
   margin-top:15px;
@@ -109,6 +112,159 @@ form input, form textarea{
   padding:12px;
   border:none;
   border-radius:10px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+#modalPayBtn{background:var(--primary);color:white;}
+#downloadBtn{background:var(--accent);color:white;}
+
+@media(max-width:500px){
+  .checkout-item{flex-direction:column;align-items:flex-start;}
+  .checkout-item img{margin-bottom:10px;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Checkout</h1>
+
+  <div id="checkoutItems"></div>
+
+  <div class="total-section">
+    Total: ₦<span id="checkoutTotal">0</span>
+  </div>
+
+  <form id="checkoutForm">
+    <input type="text" name="name" placeholder="Full Name" required>
+    <textarea name="address" placeholder="Delivery Address" rows="3" required></textarea>
+    <input type="tel" name="phone" placeholder="Phone Number" required>
+    <button type="submit" class="pay-btn">Generate Receipt</button>
+  </form>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div id="receiptModal">
+  <div id="receiptContent">
+    <h2>Receipt</h2>
+    <div id="receiptDetails"></div>
+
+    <button class="modal-btn" id="modalPayBtn">Pay</button>
+    <button class="modal-btn" id="downloadBtn">Download Receipt</button>
+  </div>
+</div>
+
+<script>
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function renderCheckout(){
+  const container = document.getElementById('checkoutItems');
+  container.innerHTML = '';
+  let total = 0;
+
+  if(cart.length === 0){
+    container.innerHTML = '<p style="text-align:center;color:#64748b">Your cart is empty!</p>';
+    document.getElementById('checkoutTotal').textContent = '0';
+    return;
+  }
+
+  cart.forEach(item=>{
+    let qty = item.qty || 1;
+    let price = Number(item.price) || 0;
+    total += price * qty;
+
+    const div = document.createElement('div');
+    div.className = 'checkout-item';
+    div.innerHTML = `
+      <img src="${item.img}">
+      <div class="checkout-item-details">
+        <h3>${item.name}</h3>
+        <p>Price: ₦${price}</p>
+        <p>Quantity: ${qty}</p>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  document.getElementById('checkoutTotal').textContent = total;
+}
+
+// Generate Receipt
+document.getElementById('checkoutForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  if(cart.length === 0) return alert("Cart is empty!");
+
+  const formData = new FormData(e.target);
+  const name = formData.get('name');
+  const address = formData.get('address');
+  const phone = formData.get('phone');
+  const total = document.getElementById('checkoutTotal').textContent;
+
+  let receiptHTML = `
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Phone:</strong> ${phone}</p>
+    <p><strong>Address:</strong> ${address}</p>
+    <hr>
+    <h3>Items</h3>
+  `;
+
+  cart.forEach(item=>{
+    let qty = item.qty || 1;
+    let price = Number(item.price) || 0;
+    let subtotal = price * qty;
+    receiptHTML += `<div class="receipt-item"><span>${item.name} (x${qty})</span><span>₦${subtotal}</span></div>`;
+  });
+
+  receiptHTML += `<hr><p style="font-weight:700;font-size:18px">Total: ₦${total}</p>`;
+
+  document.getElementById('receiptDetails').innerHTML = receiptHTML;
+  document.getElementById('receiptModal').style.display = 'flex';
+});
+
+// Download Receipt as IMAGE
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const receipt = document.getElementById('receiptContent');
+  html2canvas(receipt).then(canvas=>{
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'receipt.png';
+    link.click();
+  });
+});
+
+// Paystack Payment
+document.getElementById('modalPayBtn').addEventListener('click', ()=>{
+  const total = Number(document.getElementById('checkoutTotal').textContent) * 100; // kobo
+  const email = prompt("Enter your email for payment:");
+
+  if (!email) return alert("Email is required.");
+
+  let handler = PaystackPop.setup({
+      key: 'pk_test_aa82525200e3e7a6deb1d2223871fc067dfe5e8e',
+      email: email,
+      amount: total,
+      currency: 'NGN',
+      ref: '' + Math.floor(Math.random() * 1000000000 + 1),
+      onClose: function(){ alert('Payment window closed'); },
+      callback: function(response){
+          alert('Payment successful! Transaction ref: ' + response.reference);
+          localStorage.removeItem('cart');
+          cart = [];
+          renderCheckout();
+          document.getElementById('receiptModal').style.display = 'none';
+      }
+  });
+
+  handler.openIframe();
+});
+
+renderCheckout();
+</script>
+
+</body>
+</html>  border-radius:10px;
   font-size:16px;
   cursor:pointer;
 }
